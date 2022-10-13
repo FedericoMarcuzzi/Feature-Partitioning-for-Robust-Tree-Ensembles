@@ -15,7 +15,7 @@ from joblib import load
 from sklearn.model_selection import train_test_split
 from fpf_lib.models import *
 from fpf_lib.misc import SEED, load_dataset, normalize
-from fpf_lib.certificates import fast_lower_bound, fast_lower_bound_hierarchical, accurate_lower_bound, accurate_lower_bound_hierarchical
+from fpf_lib.certificates import fast_lower_bound, fast_lower_bound_hierarchical, exhaustive_lower_bound, exhaustive_lower_bound_hierarchical
 
 parser = argparse.ArgumentParser()
 
@@ -44,10 +44,10 @@ clf = load(args.model_path)
 
 # COMPUTE ACCURACIES
 fast_lb_algo = fast_lower_bound_hierarchical if args.algo == "hfpf" else fast_lower_bound
-accurate_lb_algo = accurate_lower_bound_hierarchical if args.algo == "hfpf" else accurate_lower_bound
+exhaustive_lb_algo = exhaustive_lower_bound_hierarchical if args.algo == "hfpf" else exhaustive_lower_bound
 
 fast_broken = fast_lb_algo(clf, X, y, 0, args.k, maj_clss)
-accurate_broken = fast_lb_algo(clf, X, y, 0, args.k, maj_clss)
+exhaustive_broken = fast_lb_algo(clf, X, y, 0, args.k, maj_clss)
 
 print("Fast-Lower-Bound accuracies: ", end="")
 for val in fast_broken.values():
@@ -55,8 +55,8 @@ for val in fast_broken.values():
 
 print()
 
-print("Accurate-Lower-Bound accuracies: ", end="")
-for val in accurate_broken.values():
+print("Exhaustive-Lower-Bound accuracies: ", end="")
+for val in exhaustive_broken.values():
     print(1 - val.shape[0] / n_ist, end=" ")
 
 print()

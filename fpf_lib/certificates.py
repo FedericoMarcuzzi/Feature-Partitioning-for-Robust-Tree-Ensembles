@@ -11,7 +11,7 @@ date 20/02/2020
 
 import numpy as np
 from itertools import combinations
-
+from misc import Timeit
 
 
 '''
@@ -33,7 +33,7 @@ def max_damage(dmg):
   *INPUT  -> check_input : 'decision_path' parameter (from 'scikit-learn: Allow to bypass several input checking. Don’t use this parameter unless you know what you do.')
   *OUTPUT -> : a one/zero matrix n_ist X (2 * n_feat). 0 in (x,f) if the tree use feature f to predict instance x. 1 otherwise.(f+ and f- path)
 '''
-def decision_path_sets(tr,X,err=None):
+def decision_path_sets(tr, X, err=None):
 	n_ist, n_feat = X.shape
 	feature = tr.tree_.feature
 	threshold = tr.tree_.threshold
@@ -59,7 +59,7 @@ def decision_path_sets(tr,X,err=None):
 
 ### CERTIFICATI FLAT
 '''
- FUNCTION -> : 'accurate_lower_bound' calculate a slow but more accurate lower-bound of the model.
+ FUNCTION -> : 'exhaustive_lower_bound' calculate a slow but more exhaustive lower-bound of the model.
   *INPUT  -> model : forest to be certified
   *INPUT  -> X : set of original instances
   *INPUT  -> y : instances labels
@@ -67,7 +67,8 @@ def decision_path_sets(tr,X,err=None):
   *INPUT  -> k_end : maximum attacker' budget
   *OUTPUT -> : for each attack it returns the indexes of the instances attacked
 '''
-def accurate_lower_bound(model, X, y, k_start, k_end=None, maj_clss=None):
+@Timeit('Exhaustive Fast Lower Bound')
+def exhaustive_lower_bound(model, X, y, k_start, k_end=None, maj_clss=None):
 	if k_end == None:
 		k_end = k_start
 
@@ -121,6 +122,7 @@ def accurate_lower_bound(model, X, y, k_start, k_end=None, maj_clss=None):
   *INPUT  -> k_end : maximum attacker' budget
   *OUTPUT -> : for each attack it returns the indexes of the instances attacked
 '''
+@Timeit('Fast Lower Bound')
 def fast_lower_bound(model, X, y, k_start, k_end=None, maj_clss=None):
 	if k_end == None:
 		k_end = k_start
@@ -157,7 +159,7 @@ def fast_lower_bound(model, X, y, k_start, k_end=None, maj_clss=None):
 
 ### CERTIFICATI HIERARCHICAL
 '''
- FUNCTION -> : 'accurate_lower_bound_hierarchical' calculate a slow but more accurate lower-bound of the hierarchical model.
+ FUNCTION -> : 'exhaustive_lower_bound_hierarchical' calculate a slow but more exhaustive lower-bound of the hierarchical model.
   *INPUT  -> model : forest to be certified
   *INPUT  -> X : set of original instances
   *INPUT  -> y : instances labels
@@ -165,7 +167,8 @@ def fast_lower_bound(model, X, y, k_start, k_end=None, maj_clss=None):
   *INPUT  -> k_end : maximum attacker' budget
   *OUTPUT -> : for each attack it returns the indexes of the instances attacked
 '''
-def accurate_lower_bound_hierarchical(model, X, y, k_start, k_end=None, maj_clss=None):
+@Timeit('Hierarchical Exhaustive Lower Bound')
+def exhaustive_lower_bound_hierarchical(model, X, y, k_start, k_end=None, maj_clss=None):
 	if k_end == None:
 		k_end = k_start
 
@@ -187,26 +190,27 @@ def accurate_lower_bound_hierarchical(model, X, y, k_start, k_end=None, maj_clss
 	dict_broken = {}
 	for k in np.arange(k_start, k_end+1):
 		safe_inst = np.ones(n_ist)
-		for idx_f in combinations(np.arange(d_n_feat), k):
-			idx_f = np.asarray(idx_f)
+		if k > 0:
+			for idx_f in combinations(np.arange(d_n_feat), k):
+				idx_f = np.asarray(idx_f)
 
-			check_v = np.zeros((d_n_feat,1))
-			check_v[idx_f] = 1
-			check_v = np.array_split(check_v, 2, axis=0)
-			check_v = check_v[0] * check_v[1]
+				check_v = np.zeros((d_n_feat,1))
+				check_v[idx_f] = 1
+				check_v = np.array_split(check_v, 2, axis=0)
+				check_v = check_v[0] * check_v[1]
 
-			if np.sum(check_v) == 0:
-				out = np.copy(init) * np.prod(splitted[idx_f], axis=0)
-				splitted_out = np.asarray(np.array_split(out, forest_counter, axis=1))
-				summarized = np.sum(splitted_out, axis=2)
-				summarized = np.sum(summarized >= b+1, axis=0)
+				if np.sum(check_v) == 0:
+					out = np.copy(init) * np.prod(splitted[idx_f], axis=0)
+					splitted_out = np.asarray(np.array_split(out, forest_counter, axis=1))
+					summarized = np.sum(splitted_out, axis=2)
+					summarized = np.sum(summarized >= b+1, axis=0)
 
-				# maj. clss. test
-				if maj_clss is not None and forest_counter % 2 == 0:
-					idx_eq = np.where(summarized == forest_counter // 2)[0]
-					summarized[idx_eq] += (y[idx_eq]==maj_clss)
+					# maj. clss. test
+					if maj_clss is not None and forest_counter % 2 == 0:
+						idx_eq = np.where(summarized == forest_counter // 2)[0]
+						summarized[idx_eq] += (y[idx_eq]==maj_clss)
 
-				safe_inst *= (summarized >= half_slot)
+					safe_inst *= (summarized >= half_slot)
 
 		dict_broken[k] = np.where(safe_inst!=1)[0]
 
@@ -221,6 +225,7 @@ def accurate_lower_bound_hierarchical(model, X, y, k_start, k_end=None, maj_clss
   *INPUT  -> k_end : maximum attacker' budget
   *OUTPUT -> : for each attack it returns the indexes of the instances attacked
 '''
+@Timeit('Hierarchical Fast Lower Bound')
 def fast_lower_bound_hierarchical(model, X, y, k_start, k_end=None, maj_clss=None):
 	if k_end == None:
 		k_end = k_start

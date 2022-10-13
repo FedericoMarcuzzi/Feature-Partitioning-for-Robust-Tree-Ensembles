@@ -73,3 +73,24 @@ def prepare_mnist(X, y, cls=np.arange(10)):
         y[y==cls[i]] = cls_lab[i]
 
     return np.asarray(X), np.asarray(y)
+
+# class to compute function execution time
+class Timeit:
+    """
+    Decorator class used to log a function's execution time
+    """
+
+    def __init__(self, f_name):
+        self.f_name = f_name
+
+    def __call__(self, f):
+        def timed(*args, **kwargs):
+            from time import time
+
+            start = int(round(time() * 1000))
+            result = f(*args, **kwargs)
+            end = int(round(time() * 1000))
+            print(self.f_name + ' execution took {:.5f} min'.format(end - start))
+            return result
+
+        return timed

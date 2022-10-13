@@ -60,20 +60,20 @@ class ProjectedDecisionTreeClassifier():
 		for idx_f,imp_f in zip(self.idx,self.feature_importances_build_):
 			self.feature_importances_[idx_f] = imp_f
 
-	def fit(self,X,y,idx):
+	def fit(self, X, y, idx):
 		_, self.n_feat = np.shape(X)
 		self.idx = np.copy(idx)
 		self.idx.sort()
 		self.albero.fit(X[:,self.idx],y)
 		self.fit_aux()
 
-	def predict(self,X):
+	def predict(self, X):
 		return self.albero.predict(X[:,self.idx])
 
-	def score(self,X,y):
+	def score(self, X, y):
 		return self.albero.score(X[:,self.idx],y)
 
-	def decision_path(self,X,check_input=True):
+	def decision_path(self, X, check_input=True):
 		return self.albero.decision_path(X[:, self.idx],check_input)
 
 # this class manages the attributes and methods of a forest with trees trained on a projection of the original dataset.
@@ -105,10 +105,10 @@ class ProjectedForest(BaseEstimator):
 			self.index -= 1
 			raise StopIteration
 
-	def fit(self,X,y):
+	def fit(self, X, y):
 		self.max_label = Counter(y).most_common()[0][0]
 
-	def predict(self,X):
+	def predict(self, X):
 		self.check_fit()
 		predict = np.sum([tr.predict(X) for tr in self.forest],axis=0)
 
@@ -119,12 +119,12 @@ class ProjectedForest(BaseEstimator):
 		predict[predict>0] = 1
 		return predict
 
-	def score(self,X,y):
+	def score(self, X, y):
 		return np.sum(self.predict(X)==y) / len(y)
 
 # this class is the implementation of our robust FPF ensemble method.
 class FeaturePartitionedForest(ProjectedForest):
-	def __init__(self,b,r=10,n_est=None,min_acc=None,random_state=None,max_leaf_nodes=None):  
+	def __init__(self, b, r=10, n_est=None, min_acc=None, random_state=None, max_leaf_nodes=None):  
 		super().__init__()
 		self.forest = []
 		self.b = b
@@ -140,7 +140,7 @@ class FeaturePartitionedForest(ProjectedForest):
 		self.max_leaf_nodes = max_leaf_nodes
 		np.random.seed(seed=random_state)
 
-	def fit(self,X,y,X_val=None,y_val=None):
+	def fit(self, X, y, X_val=None, y_val=None):
 		super().fit(X,y)
 		n_ist, n_feat = np.shape(X)
 		idx_f = np.arange(n_feat)
@@ -194,8 +194,8 @@ class FeaturePartitionedForest(ProjectedForest):
 
 # this class is the implementation of our robust FPF ensemble method.
 class HierarchicalFeaturePartitionedForest(FeaturePartitionedForest):
-	def __init__(self,b,r=10,n_est=None,min_acc=None,random_state=None,max_leaf_nodes=None):  
-		super().__init__(b,r,n_est,min_acc,random_state,max_leaf_nodes)
+	def __init__(self, b, r=10, n_est=None, min_acc=None, random_state=None, max_leaf_nodes=None):  
+		super().__init__(b, r, n_est, min_acc, random_state, max_leaf_nodes)
 
 	def predict(self,X):
 		self.check_fit()
@@ -215,7 +215,7 @@ class HierarchicalFeaturePartitionedForest(FeaturePartitionedForest):
 
 # this class is the implementation of RSM ensemble method.
 class RandomSubspaceMethod(ProjectedForest):
-	def __init__(self,p=.2,n_trees=1,random_state=None,max_leaf_nodes=None):  
+	def __init__(self, p=.2, n_trees=1, random_state=None, max_leaf_nodes=None):  
 		super().__init__()
 		self.forest = []
 		self.p = p	

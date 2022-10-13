@@ -15,7 +15,7 @@ from joblib import load
 from sklearn.model_selection import train_test_split
 from fpf_lib.models import *
 from fpf_lib.misc import SEED, load_dataset, normalize
-from fpf_lib.certificates import accurate_lower_bound, accurate_lower_bound_hierarchical
+from fpf_lib.certificates import exhaustive_lower_bound, exhaustive_lower_bound_hierarchical
 from fpf_lib.attacks_generator import brute_force
 
 parser = argparse.ArgumentParser()
@@ -38,7 +38,7 @@ X_valid, X_test, y_valid, y_test = train_test_split(X_valid_test, y_valid_test, 
 
 clf = load(args.model_path)
 
-lb_algo = accurate_lower_bound_hierarchical if args.algo == "hfpf" else accurate_lower_bound
+lb_algo = exhaustive_lower_bound_hierarchical if args.algo == "hfpf" else exhaustive_lower_bound
 acc_undr_atk = brute_force(clf, X_test, y_test, args.k, n_th=args.n_ths)
 
 print("Model robustness: ", acc_undr_atk)
